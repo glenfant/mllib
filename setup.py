@@ -36,14 +36,19 @@ setup(name='mllib',
       long_description=long_description,
       # FIXME: Add more classifiers from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       classifiers=[
+          "Development Status :: 2 - Pre-Alpha",
           "Programming Language :: Python",
-          "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
+          "Programming Language :: Python :: 2.7",
+          "Topic :: Software Development :: Documentation",
+          "Topic :: Database :: Front-Ends",
+          "License :: OSI Approved :: MIT License",
+          "Operating System :: OS Independent"
           ],
       keywords='',  # FIXME: Add whatefer fits
       author='Gilles Lenfant',
       author_email='gilles.lenfant@alterway.fr',
       url='http://pypi.python.org/pypi/mllib',
-      license='GPLv3',
+      license='MIT',
       packages=find_packages('src'),
       package_dir = {'': 'src'},
       include_package_data=True,
