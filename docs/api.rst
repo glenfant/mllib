@@ -12,4 +12,4 @@ See http://sphinx-doc.org/ext/autodoc.html
 This is just an example from the default package you should replace with your
 own functions and classes.
 
-.. autofunction:: mllib.identity
+

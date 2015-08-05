@@ -13,6 +13,7 @@ from __future__ import unicode_literals, print_function, absolute_import
 from .restclient import RESTClient
 from .utils import KwargsSerializer
 
+
 class DocumentsService(RESTClient):
 
     def document_put(self, file_, **kwargs):
@@ -34,10 +35,26 @@ class DocumentsService(RESTClient):
             'repair': '?',
             'transform': '?',
             'trans': '*',
+            'txid': '?',
+            'lang': '?',
             'forest-name': '?',
             'temporal-collection': '?',
             'system-time': '?'
         }
         tool = KwargsSerializer(requirements)
-        kwargs, headers = tool.requests_params(kwargs, )
-        self.rest_put('/v1/documents', )
+        params, ignored = tool.request_params(kwargs)
+        response = self.rest_put('/v1/documents', params=params, data=file_)
+        return response
+
+    def document_delete(self, **kwargs):
+        requirements = {
+            'uri': '+',
+            'category': '*',
+            'database': '?',
+            'txid': '?',
+            'temporal-collection': '?',
+            'system-time': '?'
+        }
+        tool = KwargsSerializer(requirements)
+        params, ignored = tool.request_params(kwargs)
+        response = self.rest_delete('/v1/documents', params=params)

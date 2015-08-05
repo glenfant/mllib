@@ -4,16 +4,19 @@
 Testing mllib.utils
 ===================
 """
+from __future__ import unicode_literals, print_function, absolute_import
 
 import unittest
 
 import requests
 
 import mllib.utils
+import mllib.config
 
 
 class IsStringTest(unittest.TestCase):
     """Checking object being son kind of string"""
+
     def test_string(self):
         """Test from a bytes string"""
         self.assertTrue(mllib.utils.is_string(b'yeah'))
@@ -29,9 +32,10 @@ class IsStringTest(unittest.TestCase):
 
 class GuessMimetypeTest(unittest.TestCase):
     """Guess mime type of a file"""
+
     def test_unknown(self):
         """Unknown mimetype"""
-        self.assertEqual(mllib.utils.guess_mimetype('foo.unknown'), mllib.utils.UNKNOWN_CONTENT_TYPE)
+        self.assertEqual(mllib.utils.guess_mimetype('foo.unknown'), mllib.config.UNKNOWN_MIMETYPE)
 
     def test_xml(self):
         """An XML file"""
@@ -43,7 +47,6 @@ class GuessMimetypeTest(unittest.TestCase):
 
 
 class KwargsSerializerTest(unittest.TestCase):
-
     def test_zero_or_one(self):
         """Zero or one parameter: '?'"""
         all_keywords = {'database': '?'}
@@ -123,6 +126,7 @@ class KwargsSerializerTest(unittest.TestCase):
 
     def test_rest_formatting(self):
         """Correctness of formatting for a HTTP query"""
+        self.maxDiff = None
         all_keywords = {
             'uri': '+',
             'category': '*',
@@ -141,22 +145,27 @@ class KwargsSerializerTest(unittest.TestCase):
             'database': 'blahblah',
             'collection': ['one', 'two'],
             'quality': '3',
-            'perm': 'update',
-            'prop': 'good'
+            'perm': [('rest-writer', 'update')],
+            'prop': [('intensity', 'good')]
         }
         params, ignored = serializer.request_params(query_data)
 
         # Note that some methods supported by requests and MarkLogic are not supported by httpbin.org
-        for method, uri in (
-            (requests.get, 'http://httpbin.org/get'),
-            (requests.post, 'http://httpbin.org/get'),
-            (requests.put, 'http://httpbin.org/put'),
-            (requests.patch, 'http://httpbin.org/patch'),
-            (requests.delete, 'http://httpbin.org/delete')):
+        expected = query_data.copy()
+        del expected['perm']
+        del expected['prop']
+        expected['perm:rest-writer'] = 'update'
+        expected['prop:intensity'] = 'good'
 
+        for method, uri in (
+                (requests.get, 'http://httpbin.org/get'),
+                (requests.post, 'http://httpbin.org/get'),
+                (requests.put, 'http://httpbin.org/put'),
+                (requests.patch, 'http://httpbin.org/patch'),
+                (requests.delete, 'http://httpbin.org/delete')):
             response = requests.get('http://httpbin.org/get', params=params)
             self.assertTrue(response.ok)
-            self.assertDictEqual(response.json()['args'], query_data)
+            self.assertDictEqual(response.json()['args'], expected)
 
 
 class ValidatorsTest(unittest.TestCase):
@@ -188,3 +197,139 @@ class ValidatorsTest(unittest.TestCase):
         self.assertTrue(is_poz('10'))
         self.assertFalse(is_poz(-1))
         self.assertFalse(is_poz('foo'))
+
+    def test_is_2_tuple_sequence(self):
+        is_2ts = mllib.utils.is_2_tuple_sequence
+
+        # Some invalid data
+        data = {}
+        validator = is_2ts()
+        self.assertFalse(validator(data))
+
+        # Three items in inner tuple when exactly two are required
+        data = [('one', 'two', 'three')]
+        self.assertFalse(validator(data))
+
+        # One item in inner tuple when exactly two are required
+        data = [('one',)]
+        self.assertFalse(validator(data))
+
+        # Exactly two items in inner tuples
+        data = [('key', 'value'), ('key', 'value')]
+        self.assertTrue(validator(data))
+
+        # First item of inner tuple is not a str (like)
+        data = [('key', 'value'), (100, 'value')]
+        self.assertFalse(validator(data))
+
+        # Constrained first values by enum
+        validator = is_2ts(allowed_keys=('one', 'two'))
+        data = [('one', 'schtroumpf')]
+        self.assertTrue(validator(data))
+        data = [('schtroumpf', 'anything')]
+        self.assertFalse(validator(data))
+
+        # Constrained second values by enum
+        validator = is_2ts(allowed_values=('one', 'two'))
+        data = [('schtroumpf', 'one')]
+        self.assertTrue(validator(data))
+        data = [('anything', 'three')]
+        self.assertFalse(validator(data))
+
+        # Constrained first value with a callback
+        def is_valid(value):
+            return value != 'invalid'
+
+        validator = is_2ts(allowed_keys=is_valid)
+        data = [('valid', 'one')]
+        self.assertTrue(validator(data))
+        data = [('invalid', 'one')]
+        self.assertFalse(validator(data))
+
+        # Constrained second value with callback
+        validator = is_2ts(allowed_values=is_valid)
+        data = [('one', 'valid')]
+        self.assertTrue(validator(data))
+        data = [('one', 'invalid')]
+        self.assertFalse(validator(data))
+
+
+class ParseMimetypesTest(unittest.TestCase):
+    def test_null_mimetype(self):
+        for null_value in ('', None, []):
+            self.assertEqual(mllib.utils.parse_mimetype(null_value), ('', '', '', {}))
+
+    def test_valid_mimetypes(self):
+        testcases = [
+            ('TeXt/HtmL', ('text', 'html', '', {})),
+            ('text/plain; charset=us-ascii', ('text', 'plain', '', {'charset': 'us-ascii'})),
+            ('text/plain; charset="us-ascii"', ('text', 'plain', '', {'charset': 'us-ascii'})),
+            ('application/json+hal; charset=utf-8', ('application', 'json', 'hal', {'charset': 'utf-8'}))
+        ]
+        for mt_value, expected in testcases:
+            self.assertEqual(mllib.utils.parse_mimetype(mt_value), expected)
+
+
+class FakeResponse(object):
+    def __init__(self, headers, body):
+        self.headers = requests.utils.CaseInsensitiveDict(headers)
+        self.body = body
+
+    def iter_lines(self):
+        for line in self.body.splitlines():
+            yield line + '\n'
+
+
+MULTIPART_RAW_RESPONSE = b"""
+
+--1176113105d6eaed
+Content-Type: text/plain
+X-Primitive: untypedAtomic
+
+hello
+--1176113105d6eaed
+Content-Type: text/plain
+X-Primitive: untypedAtomic
+
+world
+--1176113105d6eaed
+Content-Type: text/plain
+X-Primitive: untypedAtomic
+
+hello world
+--1176113105d6eaed--
+"""
+
+
+class ResponseAdapterTest(unittest.TestCase):
+    def test_multipart_mixed_content_type(self):
+        headers = {'content-type': 'multipart/mixed; boundary=ARBITRARY_BOUNDARY'}
+        response = FakeResponse(headers, None)
+        ad = mllib.utils.ResponseAdapter(response)
+        self.assertEqual(ad.maintype, 'multipart')
+        self.assertEqual(ad.subtype, 'mixed')
+        self.assertEqual(ad.boundary, 'ARBITRARY_BOUNDARY')
+
+    def test_ugly_content_type(self):
+        headers = {'content-type': 'this is not a valid header'}
+        response = FakeResponse(headers, None)
+        ad = mllib.utils.ResponseAdapter(response)
+        self.assertEqual(ad.maintype, 'this is not a valid header')
+        self.assertEqual(ad.subtype, '')
+        self.assertIsNone(ad.boundary)
+
+    def test_iterate_chunks(self):
+        headers = {'content-type': 'Content-Type: multipart/mixed; boundary=1176113105d6eaed'}
+        response = FakeResponse(headers, MULTIPART_RAW_RESPONSE)
+        ad = mllib.utils.ResponseAdapter(response)
+        count = 0
+        all_headers = []
+        all_chunks = []
+        for headers, chunk in ad.iter_parts():
+            count += 1
+            all_headers.append(headers)
+            all_chunks.append(chunk)
+        self.assertEqual(len(all_headers), 3)
+        self.assertEqual(len(all_chunks), 3)
+
+

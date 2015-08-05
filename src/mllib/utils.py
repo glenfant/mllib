@@ -11,10 +11,11 @@ from __future__ import unicode_literals, print_function, absolute_import
 
 import mimetypes
 import re
-import sys
 
+import enum
+from requests.structures import CaseInsensitiveDict
 
-HAVE_PYTHON3 = sys.version_info[0] == 3
+from .config import HAVE_PYTHON3, UNKNOWN_MIMETYPE
 
 if HAVE_PYTHON3:
     def is_string(obj):
@@ -23,18 +24,16 @@ else:
     def is_string(obj):
         return isinstance(obj, basestring)
 
+
 def is_sequence(obj):
     return isinstance(obj, (list, tuple))
-
-
-UNKNOWN_CONTENT_TYPE = "application/octet-stream"
 
 
 def guess_mimetype(filename):
     """The mimetype of a file name or path, 'application/octet-stream' if unknown"""
     mt, _ = mimetypes.guess_type(filename)
     if mt is None:
-        return UNKNOWN_CONTENT_TYPE
+        return UNKNOWN_MIMETYPE
     return mt
 
 
@@ -97,6 +96,15 @@ class KwargsSerializer(object):
             else:
                 raise ValueError("Invalid count spec for {0}: {1}".format(name, value_spec))
 
+            # Special effect for 'perm', 'prop' and 'trans' parameters
+            if name in ('perm', 'prop', 'trans'):
+                for subname, subvalue in value:
+                    new_key = "{0}:{1}".format(name, subname)
+                    if new_key in params:
+                        params[new_key].append(subvalue)
+                    else:
+                        params[new_key] = [subvalue]
+                del params[name]
         return params, ignored
 
 
@@ -125,7 +133,7 @@ def is_path(obj):
 def is_mimetype(obj):
     if not is_string(obj):
         return False
-    if obj == UNKNOWN_CONTENT_TYPE:
+    if obj == UNKNOWN_MIMETYPE:
         return True
     return mimetypes.guess_extension(obj) is not None
 
@@ -138,13 +146,157 @@ def is_positive_or_zero_int(obj):
     return obj >= 0
 
 
+def is_ncname(obj):
+    if not is_identifier(obj):
+        return False
+    return obj.find(':') == -1
+
+
+def is_datetime(obj):
+    # TODO: a real func
+    return True
+
+
+class is_2_tuple_sequence(object):
+    """Validates we have a sequence of tuples like
+
+    [('one', 'two'), ('three', four), ...]
+    """
+    def __init__(self, allowed_keys=None, allowed_values=None):
+        if callable(allowed_keys) or allowed_keys is None:
+            self.allowed_keys = allowed_keys
+        else:
+            self.allowed_keys = frozenset(allowed_keys)
+
+        if callable(allowed_values) or allowed_values is None:
+            self.allowed_values = allowed_values
+        else:
+            self.allowed_values = frozenset(allowed_values)
+
+    def __call__(self, obj):
+        if not isinstance(obj, (tuple, list)):
+            return False
+        for items in obj:
+            if not isinstance(items, (tuple, list)):
+                return False
+            if len(items) != 2:
+                return False
+
+            for i, controller in enumerate((self.allowed_keys, self.allowed_values)):
+                if callable(controller):
+                    if not controller(items[i]):
+                        return False
+                elif isinstance(controller, frozenset):
+                    if items[i] not in controller:
+                        return False
+                else:
+                    if not is_string(items[i]):
+                        return False
+        return True
+
+
 unit_validators = {
+    # {keyword: callable(obj)->bool, ...}
     'uri': is_path,
     'category': lambda cat: cat in ('content', 'metadata', 'collections', 'permissions', 'properties', 'quality'),
     'database': is_identifier,
+    'forest-name': is_identifier,
     'format': lambda fmt: fmt in ('xml', 'json'),
     'collection': is_identifier,
     'quality': is_positive_or_zero_int,
-    'perm': lambda perm: perm in ('read', 'update', 'execute'),
-    'prop': is_identifier
+    'perm': is_2_tuple_sequence(allowed_values=('read', 'update', 'execute')),
+    'prop': is_2_tuple_sequence(),
+    'extract': lambda from_: from_ in ('properties', 'document'),
+    'repair': lambda mode: mode in ('full', 'none'),
+    'transform': is_identifier,
+    'trans': is_2_tuple_sequence(),
+    'temporal-collection': is_identifier,
+    'system_time': is_datetime,
 }
+
+
+def multipart_response_iter(response):
+    pass
+
+
+def parse_mimetype(mimetype):
+    """Parses a MIME type into its components.
+    Stolen from aiohttp
+    :param str mimetype: MIME type
+    :returns: 4 element tuple for MIME type, subtype, suffix and parameters
+    :rtype: tuple
+    Example:
+
+        >>> parse_mimetype('text/html; charset=utf-8')
+        ('text', 'html', '', {'charset': 'utf-8'})
+    """
+    if not mimetype:
+        return '', '', '', {}
+
+    parts = mimetype.split(';')
+    params = []
+    for item in parts[1:]:
+        if not item:
+            continue
+        key, value = item.split('=', 1) if '=' in item else (item, '')
+        params.append((key.lower().strip(), value.strip(' "')))
+    params = dict(params)
+
+    fulltype = parts[0].strip().lower()
+    if fulltype == '*':
+        fulltype = '*/*'
+
+    mtype, stype = fulltype.split('/', 1) if '/' in fulltype else (fulltype, '')
+    stype, suffix = stype.split('+', 1) if '+' in stype else (stype, '')
+
+    return mtype, stype, suffix, params
+
+
+class ResponseAdapter(object):
+    """An application oriented helper for requests.Response handling
+    """
+    def __init__(self, response):
+        if False:
+            # Pycharme helper
+            import requests
+            self.response = requests.Response()
+        self.response = response
+        ct = response.headers.get('content-type', UNKNOWN_MIMETYPE)
+        self.maintype, self.subtype, self.extra_type, self.ct_options = parse_mimetype(ct)
+        self.boundary = bytes(self.ct_options['boundary']) if 'boundary' in self.ct_options else None
+
+    def is_multipart_mixed(self):
+        return (self.maintype, self.subtype) == ('multipart', 'mixed')
+
+    def iter_parts(self):
+        """Yields tuples of (headers, body) for each part of the response
+        """
+        part_start_marker = b'--' + self.boundary
+        parts_end_marker = b'--' + self.boundary + b'--'
+        states = enum.Enum('states', ('BOUNDARY', 'HEADERS', 'BODY'))
+        state = states.BOUNDARY
+        for line in self.response.iter_lines():
+            if state == states.BOUNDARY:
+                # Waiting for headers
+                if line.strip() == part_start_marker:
+                    state = states.HEADERS
+                    headers = CaseInsensitiveDict()
+
+            elif state == states.HEADERS:
+                line = line.strip()
+                if line == '':
+                    state = states.BODY
+                    chunk = []
+                else:
+                    name, value = line.split(':', 1)
+                    headers[name.strip()] = value.strip()
+
+            elif state == states.BODY:
+                if line.strip() == part_start_marker:
+                    yield headers, b'\n'.join(chunk)
+                    state = states.BOUNDARY
+                elif line.strip() == parts_end_marker:
+                    yield headers, b'\n'.join(chunk)
+                    raise StopIteration
+                else:
+                    chunk.append(line)

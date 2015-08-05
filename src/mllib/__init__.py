@@ -22,8 +22,10 @@ if sys.version_info < (2, 7):
         """
         def handle(self, record):
             pass
+
         def emit(self, record):
             pass
+
         def createLock(self):
             self.lock = None
 else:
@@ -33,11 +35,15 @@ LOG.addHandler(NullHandler())
 
 # PEP 396 style version marker
 try:
-    __version__ = pkg_resources.get_distribution(u'mllib').version
-except:
+    __version__ = pkg_resources.get_distribution('mllib').version
+except pkg_resources.DistributionNotFound:
     LOG.warning("Could not get the package version from pkg_resources")
     __version__ = 'unknown'
 
 # Non standard but ML "tradition"
 if mimetypes.guess_type('.xqy') == (None, None):
     mimetypes.add_type('application/xquery', '.xqy')
+
+# Some distros have not this
+if mimetypes.guess_type('.json') == (None, None):
+    mimetypes.add_type('application/json', '.json')

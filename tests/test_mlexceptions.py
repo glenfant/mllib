@@ -20,6 +20,7 @@ class MLExceptionTest(unittest.TestCase):
         cls.client = RESTClient.from_envvar('MLLIB_TEST_SERVER')
 
     def test_exccontent(self):
+        """Checking exception attributes"""
         headers = {
             'X-Error-Accept': b'application/json',
             'Accept': b'application/xml'
