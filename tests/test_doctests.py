@@ -31,8 +31,8 @@ def load_tests(loader, tests, ignore):
                                         globs=filedoctest_globs))
 
     # Run the doctests in the various modules
-    import mllib
-    modules_with_doctests = (mllib, mllib.utils)
+    import mllib.utils
+    modules_with_doctests = (mllib.utils,)
     for module in modules_with_doctests:
         tests.addTests(doctest.DocTestSuite(module))
     return tests
