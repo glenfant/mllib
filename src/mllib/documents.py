@@ -11,7 +11,8 @@ http://docs.marklogic.com/REST/client/management
 from __future__ import unicode_literals, print_function, absolute_import
 
 from .restclient import RESTClient
-from .utils import KwargsSerializer
+from .utils import KwargsSerializer, guess_mimetype, is_sequence, ResponseAdapter
+from .config import UNKNOWN_MIMETYPE
 
 
 class DocumentsService(RESTClient):
@@ -21,6 +22,9 @@ class DocumentsService(RESTClient):
         http://docs.marklogic.com/REST/PUT/v1/documents
 
         :param file_: A path to a file or an opened file object in 'rb' mode.
+        :param kwargs: Named arguments from the dict ``requirements`` below
+        :return: a :class:`requests.Response` object
+        :raise: a :class:`mllib.mlexceptions.MarkLogicServerError` on bad requests
         """
         requirements = {
             'uri': '!',
@@ -43,10 +47,51 @@ class DocumentsService(RESTClient):
         }
         tool = KwargsSerializer(requirements)
         params, ignored = tool.request_params(kwargs)
-        response = self.rest_put('/v1/documents', params=params, data=file_)
+
+        if hasattr(file_, 'name'):
+            ct = guess_mimetype(file_.name)
+        else:
+            ct = UNKNOWN_MIMETYPE
+        headers = {'Content-type': ct}
+        response = self.rest_put('/v1/documents', params=params, data=file_, headers=headers)
         return response
 
+    def document_get(self, **kwargs):
+        """Retrieve document content and/or metadata from the database.
+        http://docs.marklogic.com/REST/GET/v1/documents
+
+        :param kwargs: Named arguments from the dict ``requirements`` below
+        :return: a :class:`requests.Response` object or a :class:`mllib.utils.ResponseAdapter` when multiple
+          documents are returned
+        :raise: a :class:`mllib.mlexceptions.MarkLogicServerError` on bad requests
+        """
+        requirements = {
+            'uri': '+',
+            'database': '?',
+            'category': '*',
+            'format': '?',
+            'transform': '?',
+            'trans': '*',
+            'txid': '?'
+        }
+        tool = KwargsSerializer(requirements)
+        params, ignored = tool.request_params(kwargs)
+        category = params.get('category', [])
+        if is_sequence(params['uri']) or ({'content', 'metadata'} <= frozenset(category)):
+            headers = {'Accept': 'multipart/mixed'}
+            response_adapter = ResponseAdapter
+        else:
+            headers = {}
+            response_adapter = lambda x: x  # Neutral adapter
+        response = self.rest_get('/v1/documents', params=params, headers=headers)
+        return response_adapter(response)
+
     def document_delete(self, **kwargs):
+        """
+
+        :param kwargs: Named arguments from the dict ``requirements`` below
+        :return:
+        """
         requirements = {
             'uri': '+',
             'category': '*',
@@ -58,3 +103,4 @@ class DocumentsService(RESTClient):
         tool = KwargsSerializer(requirements)
         params, ignored = tool.request_params(kwargs)
         response = self.rest_delete('/v1/documents', params=params)
+        return response

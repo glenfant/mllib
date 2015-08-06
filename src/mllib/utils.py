@@ -19,18 +19,49 @@ from .config import HAVE_PYTHON3, UNKNOWN_MIMETYPE
 
 if HAVE_PYTHON3:
     def is_string(obj):
-            return isinstance(obj, str)
+        return isinstance(obj, str)
 else:
     def is_string(obj):
         return isinstance(obj, basestring)
 
 
+def dict_pop(mapping, *keys):
+    """Returns a new mapping with keys + values taken from original mapping
+     keys are removed from original mapping
+
+    :param mapping: original mapping
+    :param keys: Keys to take to new dict and remove from original ``mapping``.
+    :return: new dict with keys from ``keys`` when they exist
+
+    .. code:: pycon
+
+       >>> orig = {'a': 1, 'b': 2, 'c': 3}
+       >>> dict_pop(orig, 'a', 'b', 'z')
+       {u'a': 1, u'b': 2}
+       >>> orig
+       {u'c': 3}
+       >>> dict_pop(orig)
+       {}
+       >>> orig
+       {u'c': 3}
+    """
+    return {k: mapping.pop(k) for k in keys if k in mapping}
+
+
 def is_sequence(obj):
+    """Determining a Pythonic ordered sequence of objects
+    """
     return isinstance(obj, (list, tuple))
 
 
 def guess_mimetype(filename):
-    """The mimetype of a file name or path, 'application/octet-stream' if unknown"""
+    """The mimetype of a file name or path, 'application/octet-stream' if unknown
+
+    .. code:: pycon
+
+       >>> guess_mimetype('foo.json')
+       u'application/json'
+    """
     mt, _ = mimetypes.guess_type(filename)
     if mt is None:
         return UNKNOWN_MIMETYPE
@@ -162,6 +193,7 @@ class is_2_tuple_sequence(object):
 
     [('one', 'two'), ('three', four), ...]
     """
+
     def __init__(self, allowed_keys=None, allowed_values=None):
         if callable(allowed_keys) or allowed_keys is None:
             self.allowed_keys = allowed_keys
@@ -228,7 +260,7 @@ def parse_mimetype(mimetype):
     Example:
 
         >>> parse_mimetype('text/html; charset=utf-8')
-        ('text', 'html', '', {'charset': 'utf-8'})
+        (u'text', u'html', u'', {u'charset': u'utf-8'})
     """
     if not mimetype:
         return '', '', '', {}
@@ -286,17 +318,19 @@ class ResponseAdapter(object):
                 line = line.strip()
                 if line == '':
                     state = states.BODY
-                    chunk = []
+                    chunks = []
                 else:
                     name, value = line.split(':', 1)
                     headers[name.strip()] = value.strip()
 
             elif state == states.BODY:
                 if line.strip() == part_start_marker:
-                    yield headers, b'\n'.join(chunk)
-                    state = states.BOUNDARY
+                    yield headers, b''.join(chunks).strip()  # Lines have their \n terminator
+                    state = states.HEADERS
+                    headers = CaseInsensitiveDict()
+                    chunks = []
                 elif line.strip() == parts_end_marker:
-                    yield headers, b'\n'.join(chunk)
+                    yield headers, b''.join(chunks).strip()  # Lines have their \n terminator
                     raise StopIteration
                 else:
-                    chunk.append(line)
+                    chunks.append(line)

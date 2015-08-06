@@ -32,7 +32,7 @@ def load_tests(loader, tests, ignore):
 
     # Run the doctests in the various modules
     import mllib
-    modules_with_doctests = (mllib,)
+    modules_with_doctests = (mllib, mllib.utils)
     for module in modules_with_doctests:
         tests.addTests(doctest.DocTestSuite(module))
     return tests

@@ -27,7 +27,7 @@ if sys.version_info < (2, 7):
             pass
 
         def createLock(self):
-            self.lock = None
+            self.lock = None  # noqa
 else:
     from logging import NullHandler
 
@@ -44,6 +44,6 @@ except pkg_resources.DistributionNotFound:
 if mimetypes.guess_type('.xqy') == (None, None):
     mimetypes.add_type('application/xquery', '.xqy')
 
-# Some distros have not this
+# Some distros like CentOS have not this essential MIME type
 if mimetypes.guess_type('.json') == (None, None):
     mimetypes.add_type('application/json', '.json')

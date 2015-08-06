@@ -277,10 +277,11 @@ class FakeResponse(object):
 
     def iter_lines(self):
         for line in self.body.splitlines():
-            yield line + '\n'
+            yield line + b'\n'
 
 
 MULTIPART_RAW_RESPONSE = b"""
+Anything may precede the real payload
 
 --1176113105d6eaed
 Content-Type: text/plain
@@ -296,8 +297,12 @@ world
 Content-Type: text/plain
 X-Primitive: untypedAtomic
 
-hello world
+héllo
+world
+
 --1176113105d6eaed--
+
+Anything may follow the end multipart delimiter
 """
 
 
@@ -327,9 +332,14 @@ class ResponseAdapterTest(unittest.TestCase):
         all_chunks = []
         for headers, chunk in ad.iter_parts():
             count += 1
+            self.assertEqual(len(headers), 2)
+            self.assertEqual(headers['content-type'], 'text/plain')
+            self.assertEqual(headers['x-primitive'], 'untypedAtomic')
             all_headers.append(headers)
             all_chunks.append(chunk)
-        self.assertEqual(len(all_headers), 3)
-        self.assertEqual(len(all_chunks), 3)
+        self.assertEqual(count, 3)
+        self.assertEqual(all_chunks[0], "hello")
+        self.assertEqual(all_chunks[1], "world")
+        self.assertEqual(all_chunks[2], b"héllo\nworld")
 
 

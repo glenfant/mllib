@@ -14,7 +14,17 @@ first release.
 As said in the subtitle, this package focuses on **documentation management
 services** (CRUD operations, searching, ...). If you need a pythonic way to
 create, fine tune and populate `MarkLogic 8`_ databases and clusters, you may
-prefer `MarkLogic_Python <https://github.com/paul-hoehne/MarkLogic_Python>`_
+prefer `MarkLogic_Python <https://github.com/paul-hoehne/MarkLogic_Python>`_.
+
+Hey! Where are the docs
+=======================
+
+As above written, this package is at an early stage of development, and
+writing a cool doc with an API and features that may change before the first
+beta release is a waste of time.
+
+Meanwhile, you may read and play with the code that's in the ``sandbox/``
+directory that explores most features of the provided resources.
 
 Developer notes
 ===============
@@ -27,7 +37,7 @@ Grab the source from the SCM repository
 
 .. code:: console
 
-   $ git clone
+   $ git clone https://github.com/glenfant/mllib.git
    $ python setup.py develop
    $ pip install mllib[dev]
 
@@ -83,7 +93,9 @@ Contributing
   See the worflow explained at http://blog.bigbinary.com/2013/09/13/how-to-keep-your-fork-uptodate.html
 
 - Issue a pull request when you're done, mentioning the original ticket you
-  created at step 2
+  created at step 2.
+
+- Don't forget to "star" the project on Github if you like it. ;)
 
 Links
 =====
