@@ -11,15 +11,18 @@ filedoctest_globs = {
     'dummy': lambda: None
 }
 
+
 def filedoctest_setup(test):
     # Add fixtures for your doctest files
     # See https://docs.python.org/2.7/library/doctest.html#doctest.DocFileSuite
     return
 
+
 def filedoctest_teardown(test):
     # Cleanup fixtures for your doctest files
     # See https://docs.python.org/2.7/library/doctest.html#doctest.DocFileSuite
     return
+
 
 def load_tests(loader, tests, ignore):
     # See https://docs.python.org/2.7/library/doctest.html#unittest-api
