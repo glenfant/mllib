@@ -26,6 +26,20 @@ beta release is a waste of time.
 Meanwhile, you may read and play with the code that's in the ``sandbox/``
 directory that explores most features of the provided resources.
 
+Installation
+============
+
+Jump to `Contributing`_ if you want the full source distro and contribute to
+the project. Others will use ``pip`` to install ``mllib`` like this, as long
+as it is not yet available on PyPI.
+
+.. code:: console
+
+   pip install git+https://github.com/glenfant/mllib.git#egg=mllib
+
+See https://pip.pypa.io/en/latest/reference/pip_install.html#git if you need a
+specific Git branch, tag or commit hash.
+
 Developer notes
 ===============
 
