@@ -191,10 +191,30 @@ def is_datetime(obj):
 class is_2_tuple_sequence(object):
     """Validates we have a sequence of tuples like
 
-    [('one', 'two'), ('three', four), ...]
+    [('one', 'two'), ('three', 'four'), ...]
+
+
+    .. code:: pycon
+
+       >>> itt = is_2_tuple_sequence()
+       >>> itt(None)
+       False
+       >>> itt([])
+       True
+       >>> itt([1])
+       False
+       >>> itt([('two', 'three')])
+       True
+       >>> itt([('two', 'three'), ('one', 'ten')])
+       True
     """
 
     def __init__(self, allowed_keys=None, allowed_values=None):
+        """Initializer
+
+        :param allowed_keys: Allowed objects for first values in each tuple. A (frozen)set of data or callback
+        :param allowed_values: Allowed objects for second values in each tuple.  A (frozen)set of data or callback
+        """
         if callable(allowed_keys) or allowed_keys is None:
             self.allowed_keys = allowed_keys
         else:
@@ -216,8 +236,7 @@ class is_2_tuple_sequence(object):
 
             for i, controller in enumerate((self.allowed_keys, self.allowed_values)):
                 if callable(controller):
-                    if not controller(items[i]):
-                        return False
+                    return bool(controller(items[i]))
                 elif isinstance(controller, frozenset):
                     if items[i] not in controller:
                         return False
@@ -243,7 +262,11 @@ unit_validators = {
     'transform': is_identifier,
     'trans': is_2_tuple_sequence(),
     'temporal-collection': is_identifier,
+    'vars': is_2_tuple_sequence(allowed_values=lambda x:True),
     'system_time': is_datetime,
+    'txid': is_string,
+    'xquery': is_string,
+    'javascript': is_string,
 }
 
 
@@ -287,6 +310,7 @@ def parse_mimetype(mimetype):
 class ResponseAdapter(object):
     """An application oriented helper for requests.Response handling
     """
+
     def __init__(self, response):
         if False:
             # Pycharme helper
