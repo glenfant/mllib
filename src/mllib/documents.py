@@ -87,10 +87,11 @@ class DocumentsService(RESTClient):
         return response_adapter(response)
 
     def document_delete(self, **kwargs):
-        """
+        """Remove documents, or reset document metadata.
+        http://docs.marklogic.com/REST/DELETE/v1/documents
 
         :param kwargs: Named arguments from the dict ``requirements`` below
-        :return:
+        :return: a :class:`requests.Response` object
         """
         requirements = {
             'uri': '+',
@@ -104,3 +105,40 @@ class DocumentsService(RESTClient):
         params, ignored = tool.request_params(kwargs)
         response = self.rest_delete('/v1/documents', params=params)
         return response
+
+    def document_patch(self, file_, **kwargs):
+        """Perform a partial update to content or metadata of a document.
+        http://docs.marklogic.com/REST/PATCH/v1/documents
+
+        :param file_: The content of the patch, see http://docs.marklogic.com/guide/rest-dev/documents#id_15775
+        :param kwargs: Named arguments from the dict ``requirements`` below
+        :return: a :class:`requests.Response` object
+        """
+        requirements = {
+            'uri': '!',
+            'category': '*',
+            'database': '?',
+            'format': '?',
+            'txid': '?'
+        }
+        tool = KwargsSerializer(requirements)
+        params, ignored = tool.request_params(kwargs)
+
+        if hasattr(file_, 'name'):
+            ct = guess_mimetype(file_.name)
+        else:
+            ct = UNKNOWN_MIMETYPE
+        headers = {'Content-type': ct}
+
+        response = self.rest_patch('/v1/documents', params=params, data=file_, headers=headers)
+        return response
+
+    def document_post(self, **kwargs):
+        """Insert or update content and/or metadata for multiple documents in a single request.
+        http://docs.marklogic.com/REST/POST/v1/documents
+
+        :param kwargs:
+        :return:
+        """
+        return
+    
