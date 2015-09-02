@@ -26,8 +26,8 @@ else:
 
 
 def dict_pop(mapping, *keys):
-    """Returns a new mapping with keys + values taken from original mapping
-     keys are removed from original mapping
+    """Returns a new mapping with keys + values taken from original mapping.
+     Keys are removed from original mapping
 
     :param mapping: original mapping
     :param keys: Keys to take to new dict and remove from original ``mapping``.
