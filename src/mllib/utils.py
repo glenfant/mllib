@@ -327,6 +327,9 @@ class ResponseAdapter(object):
     def iter_parts(self):
         """Yields tuples of (headers, body) for each part of the response
         """
+        if int(self.response.headers['content-length']) == 0:
+            raise StopIteration
+
         part_start_marker = b'--' + self.boundary
         parts_end_marker = b'--' + self.boundary + b'--'
         states = enum.Enum('states', ('BOUNDARY', 'HEADERS', 'BODY'))
