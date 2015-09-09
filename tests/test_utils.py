@@ -324,7 +324,8 @@ class ResponseAdapterTest(unittest.TestCase):
         self.assertIsNone(ad.boundary)
 
     def test_iterate_chunks(self):
-        headers = {'content-type': 'Content-Type: multipart/mixed; boundary=1176113105d6eaed'}
+        headers = {'content-type': 'Content-Type: multipart/mixed; boundary=1176113105d6eaed',
+                   'content-length': '100'}
         response = FakeResponse(headers, MULTIPART_RAW_RESPONSE)
         ad = mllib.utils.ResponseAdapter(response)
         count = 0
