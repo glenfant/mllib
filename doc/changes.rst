@@ -1,6 +1,11 @@
 Changes log
 ===========
 
+1.0.0a1
+-------
+
+No changes. Just a version normalization.
+
 1.0.0.a1
 --------
 
