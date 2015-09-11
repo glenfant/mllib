@@ -1,4 +1,4 @@
 include README.rst
-include docs/contributors.rst
-include docs/changes.rst
+include doc/contributors.rst
+include doc/changes.rst
 prune tests
