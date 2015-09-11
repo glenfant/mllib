@@ -10,7 +10,7 @@ A REST client for MarkLogic 8
 from setuptools import setup, find_packages
 import os, sys
 
-version = '1.0.0.dev0'
+version = '1.0.0.a1'
 
 this_directory = os.path.abspath(os.path.dirname(__file__))
 
@@ -19,8 +19,8 @@ def read(*names):
 
 long_description = '\n\n'.join(
     [read(*paths) for paths in (('README.rst',),
-                               ('docs', 'contributors.rst'),
-                               ('docs', 'changes.rst'))]
+                               ('doc', 'contributors.rst'),
+                               ('doc', 'changes.rst'))]
     )
 dev_require = ['Sphinx']
 if sys.version_info < (2, 7):
