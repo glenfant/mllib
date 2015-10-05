@@ -25,8 +25,6 @@ def hit_return():
 
 if 'MLLIB_TEST_SERVER' not in os.environ:
     os.environ['MLLIB_TEST_SERVER'] = 'localhost:8000:admin:admin'
-
-
 print("Warning, your database will be cleaned")
 hit_return()
 

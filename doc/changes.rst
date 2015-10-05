@@ -1,5 +1,11 @@
-Changes log
+    Changes log
 ===========
+
+1.0.0a2
+-------
+
+- Fixed packaging issue
+  [glenfant]
 
 1.0.0a1
 -------
