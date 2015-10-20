@@ -159,11 +159,11 @@ class KwargsSerializerTest(unittest.TestCase):
 
         for method, uri in (
                 (requests.get, 'http://httpbin.org/get'),
-                (requests.post, 'http://httpbin.org/get'),
+                (requests.post, 'http://httpbin.org/post'),
                 (requests.put, 'http://httpbin.org/put'),
                 (requests.patch, 'http://httpbin.org/patch'),
                 (requests.delete, 'http://httpbin.org/delete')):
-            response = requests.get('http://httpbin.org/get', params=params)
+            response = method(uri, params=params)
             self.assertTrue(response.ok)
             self.assertDictEqual(response.json()['args'], expected)
 
