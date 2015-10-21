@@ -20,6 +20,7 @@ for (var x of fn.doc()) {
 res;
 """
 
+
 def hit_return():
     raw_input("\nHit [Return] to continue:")
 
@@ -33,4 +34,7 @@ ds = DocumentsService.from_envvar('MLLIB_TEST_SERVER')
 response = es.eval_post(javascript=ALL_URIS_JS)
 headers, document = response.iter_parts().next()
 uris = json.loads(document)
-ds.document_delete(uri=uris)
+
+if uris:
+    ds.document_delete(uri=uris)
+print(len(uris), "document(s) deleted.")
