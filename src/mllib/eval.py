@@ -27,7 +27,7 @@ class EvalService(RESTClient):
         tool = KwargsSerializer(requirements)
         params, ignored = tool.request_params(kwargs)
         headers = {'Accept': 'multipart/mixed', 'Content-type': 'application/x-www-form-urlencoded'}
-        data = dict_pop(params, 'xquery', 'javascript', 'vars')
+        data = dict_pop(params, 'xquery', 'javascript', 'vars', 'database')
         if 'vars' in data:
             data['vars'] = json.dumps(dict(data['vars']))
         response = self.rest_post('/v1/eval', params=params, data=data, headers=headers)

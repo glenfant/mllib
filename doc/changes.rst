@@ -1,5 +1,15 @@
-    Changes log
+Changes log
 ===========
+
+1.0.0a3
+-------
+
+- Transactions management API
+  [glenfant]
+- Fixed URL port posting to httpbin (tests)
+  [glenfant]
+- params like perm, prop and trans are provided as mappings
+  [glenfant]
 
 1.0.0a2
 -------

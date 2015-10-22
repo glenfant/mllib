@@ -145,8 +145,8 @@ class KwargsSerializerTest(unittest.TestCase):
             'database': 'blahblah',
             'collection': ['one', 'two'],
             'quality': '3',
-            'perm': [('rest-writer', 'update')],
-            'prop': [('intensity', 'good')]
+            'perm': {'rest-writer': 'update'},
+            'prop': {'intensity': 'good'}
         }
         params, ignored = serializer.request_params(query_data)
 
@@ -166,6 +166,23 @@ class KwargsSerializerTest(unittest.TestCase):
             response = method(uri, params=params)
             self.assertTrue(response.ok)
             self.assertDictEqual(response.json()['args'], expected)
+
+    def test_special_prop_perm_trans_params(self):
+        """URL parameters transformation for API params 'trans', 'prop' and 'perm'"""
+        requirements = {
+            'perm': '!',
+            'prop': '?',
+            'trans': '!'
+        }
+        serializer = mllib.utils.KwargsSerializer(requirements)
+        query_data = {
+            'perm': {'me': 'read'},
+            'prop': {'author': 'joe', 'status': 'draft'},
+            'trans': {'foo': 'bar'}
+        }
+        params, ignored = serializer.request_params(query_data)
+        expected = {'perm:me': ['read'], 'prop:status': ['draft'], 'trans:foo': ['bar'], 'prop:author': ['joe']}
+        self.assertDictEqual(params, expected)
 
 
 class ValidatorsTest(unittest.TestCase):
@@ -342,5 +359,3 @@ class ResponseAdapterTest(unittest.TestCase):
         self.assertEqual(all_chunks[0], "hello")
         self.assertEqual(all_chunks[1], "world")
         self.assertEqual(all_chunks[2], b"héllo\nworld")
-
-

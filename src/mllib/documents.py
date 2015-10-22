@@ -33,12 +33,12 @@ class DocumentsService(RESTClient):
             'format': '?',
             'collection': '*',
             'quality': '?',
-            'perm': '*',
-            'prop': '*',
+            'perm': '?',
+            'prop': '?',
             'extract': '?',
             'repair': '?',
             'transform': '?',
-            'trans': '*',
+            'trans': '?',
             'txid': '?',
             'lang': '?',
             'forest-name': '?',
@@ -71,7 +71,7 @@ class DocumentsService(RESTClient):
             'category': '*',
             'format': '?',
             'transform': '?',
-            'trans': '*',
+            'trans': '?',
             'txid': '?'
         }
         tool = KwargsSerializer(requirements)
@@ -140,5 +140,5 @@ class DocumentsService(RESTClient):
         :param kwargs:
         :return:
         """
+        # FIXME: continue Here
         return
-

@@ -9,6 +9,7 @@ Misc inner utilities
 
 from __future__ import unicode_literals, print_function, absolute_import
 
+import collections
 import mimetypes
 import re
 
@@ -129,7 +130,7 @@ class KwargsSerializer(object):
 
             # Special effect for 'perm', 'prop' and 'trans' parameters
             if name in ('perm', 'prop', 'trans'):
-                for subname, subvalue in value:
+                for subname, subvalue in value.iteritems():
                     new_key = "{0}:{1}".format(name, subname)
                     if new_key in params:
                         params[new_key].append(subvalue)
@@ -246,6 +247,62 @@ class is_2_tuple_sequence(object):
         return True
 
 
+class is_mapping(object):
+    """Validates we have a mapping (dict) with constraints
+
+    .. code:: pycon
+
+       >>> ctrl = is_mapping()
+       >>> ctrl({})
+       True
+       >>> ctrl({'a':'anything'})
+       True
+
+    """
+
+    def __init__(self, allowed_keys=None, allowed_values=None):
+        """Initializer
+
+        :param allowed_keys: Allowed objects for first values in each tuple. A (frozen)set of data or callback
+        :param allowed_values: Allowed objects for second values in each tuple.  A (frozen)set of data or callback
+        """
+        if callable(allowed_keys) or allowed_keys is None:
+            self.allowed_keys = allowed_keys
+        else:
+            self.allowed_keys = frozenset(allowed_keys)
+
+        if callable(allowed_values) or allowed_values is None:
+            self.allowed_values = allowed_values
+        else:
+            self.allowed_values = frozenset(allowed_values)
+
+    def __call__(self, obj):
+        if not isinstance(obj, collections.Mapping):
+            return False
+
+        # Validating keys
+        for key in obj:
+            if not is_string(key):
+                return False
+            if callable(self.allowed_keys):
+                if not self.allowed_keys(key):
+                    return False
+            elif self.allowed_keys is not None:
+                if key not in self.allowed_keys:
+                    return False
+            else:
+                if not is_string(key):
+                    return False
+
+        for value in obj.itervalues():
+            if callable(self.allowed_values):
+                if not self.allowed_values(value):
+                    return False
+            elif self.allowed_values is not None:
+                if value not in self.allowed_values:
+                    return False
+        return True
+
 unit_validators = {
     # {keyword: callable(obj)->bool, ...}
     'uri': is_path,
@@ -255,18 +312,20 @@ unit_validators = {
     'format': lambda fmt: fmt in ('xml', 'json'),
     'collection': is_identifier,
     'quality': is_positive_or_zero_int,
-    'perm': is_2_tuple_sequence(allowed_values=('read', 'update', 'execute')),
-    'prop': is_2_tuple_sequence(),
+    'perm': is_mapping(allowed_values=('read', 'update', 'execute')),
+    'prop': is_mapping(),
     'extract': lambda from_: from_ in ('properties', 'document'),
     'repair': lambda mode: mode in ('full', 'none'),
     'transform': is_identifier,
-    'trans': is_2_tuple_sequence(),
+    'trans': is_mapping(),
     'temporal-collection': is_identifier,
-    'vars': is_2_tuple_sequence(allowed_values=lambda x:True),
+    'vars': is_mapping(allowed_values=lambda x: True),
     'system_time': is_datetime,
     'txid': is_string,
     'xquery': is_string,
     'javascript': is_string,
+    'name': is_string,
+    'timeLimit': is_positive_or_zero_int
 }
 
 

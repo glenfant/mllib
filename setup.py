@@ -10,7 +10,7 @@ A REST client for MarkLogic 8
 from setuptools import setup, find_packages
 import os, sys
 
-version = '1.0.0a2'
+version = '1.0.0a3'
 
 this_directory = os.path.abspath(os.path.dirname(__file__))
 

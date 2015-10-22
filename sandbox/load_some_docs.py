@@ -57,7 +57,7 @@ ds.document_put(StringIO(DOC_XML), uri=uri)
 print("\nA new document is at {}".format(uri))
 hit_return()
 
-# We push a second document
+# We push a second document in named collections with properties
 
 DOC_JSON = {
     'uid': 'A01',
@@ -68,7 +68,8 @@ DOC_JSON = json.dumps(DOC_JSON, ensure_ascii=True)
 
 uri = "python_demo/sample1/doc2.json"
 demo_doc_uris.append(uri)
-ds.document_put(StringIO(DOC_JSON), uri=uri)
+ds.document_put(StringIO(DOC_JSON), uri=uri, collection=('books', 'manuals'),
+                prop={'author': 'Joe', 'status': 'draft'})
 
 print("\nA new document is at {}".format(uri))
 hit_return()
@@ -124,7 +125,7 @@ def ml_int_addition(value1, value2):
     """A simple and useless server side operation
     """
     es = EvalService.from_envvar('MLLIB_TEST_SERVER')
-    response = es.eval_post(xquery=ADDITION_XQY, vars=[('value1', value1), ('value2', value2)])
+    response = es.eval_post(xquery=ADDITION_XQY, vars={'value1': value1, 'value2': value2})
     headers, document = response.iter_parts().next()
     assert headers['X-Primitive'] == 'integer'
     return int(document)
