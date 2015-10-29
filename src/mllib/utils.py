@@ -16,7 +16,7 @@ import re
 import enum
 from requests.structures import CaseInsensitiveDict
 
-from .config import HAVE_PYTHON3, UNKNOWN_MIMETYPE
+from .config import HAVE_PYTHON3, UNKNOWN_MIMETYPE, STREAM_LINE_MAX_SIZE
 
 if HAVE_PYTHON3:
     def is_string(obj):
@@ -394,7 +394,7 @@ class ResponseAdapter(object):
         parts_end_marker = b'--' + self.boundary + b'--'
         states = enum.Enum('states', ('BOUNDARY', 'HEADERS', 'BODY'))
         state = states.BOUNDARY
-        for line in self.response.iter_lines(chunk_size=100000):
+        for line in self.response.iter_lines(chunk_size=STREAM_LINE_MAX_SIZE):
             if state == states.BOUNDARY:
                 # Waiting for headers
                 if line.strip() == part_start_marker:
