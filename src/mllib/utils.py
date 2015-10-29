@@ -371,10 +371,9 @@ class ResponseAdapter(object):
     """
 
     def __init__(self, response):
-        if False:
-            # Pycharme helper
-            import requests
-            self.response = requests.Response()
+        """
+        :param response: is a :class:`requests.Response` object. Associated request must have the ``streamm`` option.
+        """
         self.response = response
         ct = response.headers.get('content-type', UNKNOWN_MIMETYPE)
         self.maintype, self.subtype, self.extra_type, self.ct_options = parse_mimetype(ct)
@@ -386,14 +385,16 @@ class ResponseAdapter(object):
     def iter_parts(self):
         """Yields tuples of (headers, body) for each part of the response
         """
-        if int(self.response.headers['content-length']) == 0:
+        # WTF, we do not always have a Content-Length response header. Why ?
+        headers = self.response.headers
+        if 'content-length' in headers and int(headers['content-length']) == 0:
             raise StopIteration
 
         part_start_marker = b'--' + self.boundary
         parts_end_marker = b'--' + self.boundary + b'--'
         states = enum.Enum('states', ('BOUNDARY', 'HEADERS', 'BODY'))
         state = states.BOUNDARY
-        for line in self.response.iter_lines():
+        for line in self.response.iter_lines(chunk_size=100000):
             if state == states.BOUNDARY:
                 # Waiting for headers
                 if line.strip() == part_start_marker:

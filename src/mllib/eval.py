@@ -30,5 +30,5 @@ class EvalService(RESTClient):
         data = dict_pop(params, 'xquery', 'javascript', 'vars', 'database')
         if 'vars' in data:
             data['vars'] = json.dumps(dict(data['vars']))
-        response = self.rest_post('/v1/eval', params=params, data=data, headers=headers)
+        response = self.rest_post('/v1/eval', params=params, data=data, headers=headers, stream=True)
         return ResponseAdapter(response)
