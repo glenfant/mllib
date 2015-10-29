@@ -35,21 +35,10 @@ class TransactionsService(RESTClient):
         tool = KwargsSerializer(requirements)
         params, ignored = tool.request_params(kwargs)
         headers = {'Content-Type': b'text/plain', 'Accept': 'application/json'}
-        response = self.rest_post('/v1/transactions', params=params, headers=headers)
-
-        # Return what's in the Location response header if status is OK (303)
-        # otherwise None
-        #if response.status_code == 303:
-        #    location = response.headers['Location']
-        #    txid = location.split('/')[-1]
-        #    return txid
-
-        # This is very strange and I don't know if I met a documentation issue or if there's a strange stuff in
-        # requests.
-        # I always got a 200 response with a JSON response body that provides the txid! And the response headers do
-        # not include a Location as described in the spec. This is how I worked this around
-        tx_info = json.loads(response.text)
-        return tx_info['transaction-status']['transaction-id']
+        response = self.rest_post('/v1/transactions', params=params, headers=headers, allow_redirects=False)
+        assert response.status_code == 303, "We expected a 303 HTTP status code"
+        location_hdr = response.headers['Location']
+        return location_hdr.rsplit('/', 1)[-1]
 
     def transactions_txid_get(self, txid, **kwargs):
         """Retrieve status information for the transaction whose id matches the txid given in the request URI.
@@ -69,5 +58,5 @@ class TransactionsService(RESTClient):
         if 'format' not in params:
             params['format'] = 'json'
             headers = {'Accept': 'application/json'}
-        response = self.rest_get('/v1/transactions/{0}'.format(txid), params=params)
+        response = self.rest_get('/v1/transactions/{0}'.format(txid), params=params, headers=headers)
         return json.loads(response.text)
