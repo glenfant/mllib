@@ -128,6 +128,8 @@ Credits
 The development of this library is sponsored by the `Assemblée Nationale
 <http://www.assemblee-nationale.fr/>`_ (France's Chamber of Deputies).
 
+.. img:: http://www.assemblee-nationale.fr/commun/ceresian/images/logo-an.png
+
 - Project leader : `Gilles Lenfant <mailto:gilles.lenfant@gmail.com>`_
 
 License
