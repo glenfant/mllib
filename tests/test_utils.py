@@ -292,7 +292,7 @@ class FakeResponse(object):
         self.headers = requests.utils.CaseInsensitiveDict(headers)
         self.body = body
 
-    def iter_lines(self):
+    def iter_lines(self, chunk_size=None):
         for line in self.body.splitlines():
             yield line + b'\n'
 
