@@ -157,7 +157,7 @@ def is_path(obj):
         return False
     parts = obj.split('/')
     for part in parts[:-1]:
-        if ident_rx.match(part) is None:
+        if len(part) != 0 and ident_rx.match(part) is None:
             return False
     return filename_rx.match(parts[-1]) is not None
 
