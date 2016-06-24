@@ -143,7 +143,7 @@ class KwargsSerializer(object):
 # Validators for unique value
 
 ident_rx = re.compile(r"^[_A-Za-z]\w*$")
-filename_rx = re.compile(r"^([_A-Za-z]\w*)(\.(\w*))?$")
+filename_rx = re.compile(r"^([_\w](\w|\-)*)(\.(\w*))?$")
 
 
 def is_identifier(obj):
