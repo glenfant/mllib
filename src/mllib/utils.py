@@ -12,6 +12,7 @@ from __future__ import unicode_literals, print_function, absolute_import
 import collections
 import mimetypes
 import re
+from urlparse import urlparse
 
 import enum
 from requests.structures import CaseInsensitiveDict
@@ -162,6 +163,16 @@ def is_path(obj):
     return filename_rx.match(parts[-1]) is not None
 
 
+def is_fn_uri(obj):
+    if not is_string(obj):
+        return False
+    try:
+        parsed = urlparse(obj)
+    except SyntaxError:
+        return False
+    return parsed.path is not None
+
+
 def is_mimetype(obj):
     if not is_string(obj):
         return False
@@ -305,7 +316,7 @@ class is_mapping(object):
 
 unit_validators = {
     # {keyword: callable(obj)->bool, ...}
-    'uri': is_path,
+    'uri': is_fn_uri,
     'category': lambda cat: cat in ('content', 'metadata', 'collections', 'permissions', 'properties', 'quality'),
     'database': is_identifier,
     'forest-name': is_identifier,

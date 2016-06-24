@@ -199,8 +199,17 @@ class ValidatorsTest(unittest.TestCase):
         self.assertTrue(is_path('foo'))
         self.assertTrue(is_path('foo.bar'))
         self.assertTrue(is_path('foo/bar.baz'))
-        self.assertFalse(is_path('/foo/bar.baz'))
+        self.assertTrue(is_path('/foo/bar.baz'))
         self.assertFalse(is_path('foo.x/bar.baz'))
+
+    def test_is_fn_uri(self):
+        is_uri = mllib.utils.is_fn_uri
+        self.assertTrue(is_uri('foo'))
+        self.assertTrue(is_uri('foo.bar'))
+        self.assertTrue(is_uri('foo/bar.baz'))
+        self.assertTrue(is_uri('/foo/bar.baz'))
+        self.assertTrue(is_uri('foo.x/bar.baz'))
+        self.assertFalse(is_uri('`foo.x/bar.baz'))
 
     def test_is_mimetype(self):
         is_mt = mllib.utils.is_mimetype
